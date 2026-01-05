@@ -50,12 +50,14 @@ def split_nodes_image(old_nodes: [TextNode]):
         for extracted_image in extracted_images:
 
             sections = current_str.split(f"![{extracted_image[0]}]({extracted_image[1]})", 1)
+            
+            if len(sections) != 2:
+                raise ValueError("invalid html: missing image closure")
 
-            if sections[0] == "":
-                new_nodes.append(TextNode(extracted_image[0], TextType.IMAGE, extracted_image[1]))
-            else:
+            if sections[0] != "":
                 new_nodes.append(TextNode(sections[0], TextType.TEXT))
-                new_nodes.append(TextNode(extracted_image[0], TextType.IMAGE, extracted_image[1]))
+            
+            new_nodes.append(TextNode(extracted_image[0], TextType.IMAGE, extracted_image[1]))
     
             current_str = sections[1]
 
@@ -74,23 +76,25 @@ def split_nodes_link(old_nodes: [TextNode]):
             new_nodes.append(old_node)
             continue
 
-        extracted_images = extract_markdown_links(old_node.text)
+        extracted_links = extract_markdown_links(old_node.text)
 
-        if not extracted_images:
+        if not extracted_links:
             new_nodes.append(old_node)
             continue
 
         current_str = old_node.text
         
-        for extracted_image in extracted_images:
+        for extracted_link in extracted_links:
 
-            sections = current_str.split(f"![{extracted_image[0]}]({extracted_image[1]})", 1)
+            sections = current_str.split(f"[{extracted_link[0]}]({extracted_link[1]})", 1)
+            
+            if len(sections) != 2:
+                raise ValueError("invalid html: missing link closure")
 
-            if sections[0] == "":
-                new_nodes.append(TextNode(extracted_image[0], TextType.IMAGE, extracted_image[1]))
-            else:
+            if sections[0] != "":
                 new_nodes.append(TextNode(sections[0], TextType.TEXT))
-                new_nodes.append(TextNode(extracted_image[0], TextType.IMAGE, extracted_image[1]))
+
+            new_nodes.append(TextNode(extracted_link[0], TextType.LINK, extracted_link[1]))
     
             current_str = sections[1]
 
@@ -99,3 +103,14 @@ def split_nodes_link(old_nodes: [TextNode]):
 
     return new_nodes
 
+def text_to_textnodes(text: str) -> [TextNode]:
+    
+    text_node = TextNode(text, TextType.TEXT)
+
+    text_nodes = split_nodes_image([text_node])
+    text_nodes = split_nodes_link(text_nodes)
+    text_nodes = split_nodes_delimiter(text_nodes, "**", TextType.BOLD)
+    text_nodes = split_nodes_delimiter(text_nodes, "_", TextType.ITALIC)
+    text_nodes = split_nodes_delimiter(text_nodes, "`", TextType.CODE)
+
+    return text_nodes
