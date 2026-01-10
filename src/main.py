@@ -1,4 +1,4 @@
-from textnode import TextNode, TextType
+from .textnode import TextNode, TextType
 
 def main() -> None:
     test_text_node = TextNode("My name is Michael J. Caboose, and I hate babies.", TextType.LINK, "https://www.boot.dev")
