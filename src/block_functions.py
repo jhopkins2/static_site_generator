@@ -23,20 +23,33 @@ def markdown_to_blocks(markdown_document: str):
     return blocks
 
 def block_to_blocktype(markdown_block: str) -> BlockType:
-    
+    lines = markdown_block.split("\n")
+
     if re.match(r'^(#{1,6})\s+.*', markdown_block):
         return BlockType.HEADING
 
     if re.match(r'^```[\r]?\n[\s\S]*?\n```$', markdown_block):
         return BlockType.CODE
 
-    if re.match(r'^> (.*)\n', markdown_block, re.MULTILINE):
+    if markdown_block.startswith(">"):
+        for line in lines:
+            if not line.startswith(">"):
+                return BlockType.PARAGRAPH
         return BlockType.QUOTE
 
-    if re.match(r'- (.*)\n', markdown_block, re.MULTILINE):
+    if markdown_block.startswith("- "):
+        for line in lines:
+            if not line.startswith("- "):
+                return BlockType.PARAGRAPH
+
         return BlockType.UNORDERED_LIST
 
-    if re.match(r'^\d+\. (.*)\n', markdown_block, re.MULTILINE):
+    if markdown_block.startswith("1. "):
+        i = 1
+        for line in lines:
+            if not line.startswith(f"{i}. "):
+                return BlockType.PARAGRAPH
+            i += 1
         return BlockType.ORDERED_LIST
 
     return BlockType.PARAGRAPH
